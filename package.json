@@ -7,6 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "dev": "tsc --watch",
     "example:basic": "tsx examples/basic.ts",
     "example:cloud": "tsx examples/cloud.ts",
