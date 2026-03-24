@@ -92,7 +92,11 @@ export class StealthBrowser {
 
         const args = this._getStealthArgs();
 
-        const proxy = this.config.proxy ? { server: this.config.proxy } : undefined;
+        const proxy = this.config.proxy
+            ? typeof this.config.proxy === 'string'
+                ? { server: this.config.proxy }
+                : this.config.proxy
+            : undefined;
 
         this._context = await chromium.launchPersistentContext(
             this._userDataDir,
