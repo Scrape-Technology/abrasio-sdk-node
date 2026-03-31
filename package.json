@@ -11,7 +11,8 @@
     "dev": "tsc --watch",
     "example:basic": "tsx examples/basic.ts",
     "example:cloud": "tsx examples/cloud.ts",
-    "example:human": "tsx examples/human-behavior.ts"
+    "example:human": "tsx examples/human-behavior.ts",
+    "release": "bash scripts/release.sh"
   },
   "keywords": [
     "scraping",
