@@ -169,7 +169,7 @@ export function createConfig(options: AbrasioOptions = {}): AbrasioConfig {
 }
 
 export function isCloudMode(config: AbrasioConfig): boolean {
-    return config.apiKey != null && config.apiKey.startsWith('sk_');
+    return config.apiKey != null && config.apiKey.startsWith('abr_');
 }
 
 export function isLocalMode(config: AbrasioConfig): boolean {
