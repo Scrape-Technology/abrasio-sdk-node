@@ -111,6 +111,8 @@ export class StealthBrowser {
                     '--disable-extensions',
                 ],
                 permissions: ['geolocation', 'notifications'],
+                // TLS Client Authentication (e.g. ICP-Brasil certs for gov.br logins)
+                clientCertificates: this.config.clientCertificates,
             },
         );
 

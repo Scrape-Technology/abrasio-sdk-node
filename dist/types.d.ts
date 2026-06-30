@@ -8,6 +8,29 @@ export interface ProxyConfig {
     username?: string;
     password?: string;
 }
+/**
+ * TLS Client Authentication entry — shaped to match Patchright's native
+ * `clientCertificates` context option directly (see `BrowserContextOptions`).
+ * Build with `buildClientCertificate()` rather than constructing by hand.
+ */
+export interface ClientCertificate {
+    /** Exact origin the certificate applies to, e.g. "https://example.com". */
+    origin: string;
+    /** Path to a PEM certificate file. Use with `keyPath`. */
+    certPath?: string;
+    /** PEM certificate bytes. Use with `key`. */
+    cert?: Buffer;
+    /** Path to a PEM private key file. Use with `certPath`. */
+    keyPath?: string;
+    /** PEM private key bytes. Use with `cert`. */
+    key?: Buffer;
+    /** Path to a PFX/PKCS12 file. */
+    pfxPath?: string;
+    /** PFX/PKCS12 bundle bytes. */
+    pfx?: Buffer;
+    /** Passphrase for the private key (PEM or PFX), if encrypted. */
+    passphrase?: string;
+}
 export interface FingerprintConfig {
     /** Enable WebGL APIs. Disabling is a strong bot signal. */
     webgl: boolean;
@@ -44,6 +67,13 @@ export interface AbrasioConfig {
     } | null;
     /** Persistent profile directory (local mode). */
     userDataDir?: string;
+    /**
+     * TLS client certificates (e.g. ICP-Brasil certs for gov.br logins). Local mode only —
+     * relies on a local SOCKS proxy the browser dials back into, requiring the browser and
+     * the driver to be on the same machine. For cloud mode, use `Abrasio.routeWithCertificate()`
+     * instead, which intercepts and replays the specific request outside the browser.
+     */
+    clientCertificates?: ClientCertificate[];
     /** Target region (e.g. "BR", "US"). Auto-configures locale/timezone. */
     region?: string;
     /** Persistent profile ID (cloud mode). */
@@ -80,6 +110,8 @@ export interface AbrasioOptions {
     region?: string;
     /** Persistent profile directory (local mode). */
     userDataDir?: string;
+    /** TLS client certificates (local mode only). See `AbrasioConfig.clientCertificates`. */
+    clientCertificates?: ClientCertificate[];
     /** Browser viewport. */
     viewport?: {
         width: number;

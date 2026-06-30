@@ -24,7 +24,8 @@
  * ```
  */
 export { Abrasio } from './abrasio.js';
-export { type FingerprintConfig, type AbrasioConfig, type AbrasioOptions, DEFAULT_FINGERPRINT_CONFIG, createConfig, isCloudMode, isLocalMode, } from './types.js';
+export { type FingerprintConfig, type AbrasioConfig, type AbrasioOptions, type ClientCertificate, type ProxyConfig, DEFAULT_FINGERPRINT_CONFIG, createConfig, isCloudMode, isLocalMode, } from './types.js';
 export { AbrasioError, AuthenticationError, SessionError, BrowserError, TimeoutError, InsufficientFundsError, RateLimitError, BlockedError, } from './exceptions.js';
 export { type RegionConfig, REGION_CONFIG, getRegionConfig, autoConfigureRegion, listSupportedRegions, } from './region-defaults.js';
 export { humanMoveTo, humanClick, humanType, humanScroll, humanWait, randomDelay, simulateReading, } from './utils/human.js';
+export { buildClientCertificate, routeWithClientCertificate, type BuildClientCertificateOptions, type RouteWithClientCertificateOptions, } from './utils/certificates.js';

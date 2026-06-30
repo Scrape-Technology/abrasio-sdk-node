@@ -100,6 +100,8 @@ export class StealthBrowser {
                 '--disable-extensions',
             ],
             permissions: ['geolocation', 'notifications'],
+            // TLS Client Authentication (e.g. ICP-Brasil certs for gov.br logins)
+            clientCertificates: this.config.clientCertificates,
         });
         // Inject fingerprint noise scripts
         await this._injectFingerprintNoise();

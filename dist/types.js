@@ -36,6 +36,7 @@ export function createConfig(options = {}) {
         timezone: undefined,
         viewport: options.viewport === undefined ? null : options.viewport,
         userDataDir: options.userDataDir,
+        clientCertificates: options.clientCertificates,
         region: options.region,
         profileId: options.profileId,
         autoConfigureRegion: true,
@@ -49,7 +50,7 @@ export function createConfig(options = {}) {
     };
 }
 export function isCloudMode(config) {
-    return config.apiKey != null && config.apiKey.startsWith('sk_');
+    return config.apiKey != null && config.apiKey.startsWith('abr_');
 }
 export function isLocalMode(config) {
     return !isCloudMode(config);

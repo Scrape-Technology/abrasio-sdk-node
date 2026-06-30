@@ -12,6 +12,7 @@ Supports two modes:
 - [Quick Start](#quick-start)
 - [Architecture](#architecture)
 - [Configuration](#configuration)
+- [Client Certificates](#client-certificates)
 - [API Reference](#api-reference)
   - [Abrasio Class](#abrasio-class)
   - [Options & Types](#options--types)
@@ -70,13 +71,13 @@ try {
 
 ### Cloud Mode (paid)
 
-Requires an API key (`sk_...`). Creates a managed session via the Abrasio API and connects over CDP WebSocket.
+Requires an API key (`abr_...`). Creates a managed session via the Abrasio API and connects over CDP WebSocket.
 
 ```typescript
 import { Abrasio } from 'abrasio-sdk';
 
 const abrasio = new Abrasio({
-  apiKey: 'sk_your_api_key',
+  apiKey: 'abr_your_api_key',
   region: 'BR',
   url: 'https://target-site.com',
 });
@@ -102,18 +103,18 @@ The SDK automatically selects the mode based on the API key:
 
 | Condition | Mode |
 |-----------|------|
-| No `apiKey` or key doesn't start with `sk_` | **Local** |
-| `apiKey` starts with `sk_` | **Cloud** |
+| No `apiKey` or key doesn't start with `abr_` | **Local** |
+| `apiKey` starts with `abr_` | **Cloud** |
 
 ```typescript
 // Local mode -- no key
 new Abrasio({ region: 'US' });
 
-// Cloud mode -- sk_ key
-new Abrasio({ apiKey: 'sk_live_abc123' });
+// Cloud mode -- abr_ key
+new Abrasio({ apiKey: 'abr_live_abc123' });
 
 // Also reads from environment
-// export ABRASIO_API_KEY=sk_live_abc123
+// export ABRASIO_API_KEY=abr_live_abc123
 new Abrasio(); // -> cloud mode
 ```
 
@@ -155,11 +156,13 @@ abrasio-sdk-node/
 │   │   ├── api-client.ts     # HTTP client with retry logic
 │   │   └── browser.ts        # CloudBrowser (API + CDP connection)
 │   └── utils/
-│       └── human.ts          # Human behavior simulation
+│       ├── human.ts          # Human behavior simulation
+│       └── certificates.ts   # TLS client certificates (buildClientCertificate, routeWithClientCertificate)
 ├── examples/
 │   ├── basic.ts              # Local mode example
 │   ├── cloud.ts              # Cloud mode example
-│   └── human-behavior.ts     # Human interaction simulation
+│   ├── human-behavior.ts     # Human interaction simulation
+│   └── certificate.ts        # TLS client certificate login (e.g. ICP-Brasil / gov.br)
 ├── package.json
 └── tsconfig.json
 ```
@@ -175,7 +178,7 @@ Pass these when creating an `Abrasio` instance:
 ```typescript
 const abrasio = new Abrasio({
   // -- Mode Selection --
-  apiKey: 'sk_...',           // Enables cloud mode. Env: ABRASIO_API_KEY
+  apiKey: 'abr_...',           // Enables cloud mode. Env: ABRASIO_API_KEY
   apiUrl: 'https://...',      // API URL. Env: ABRASIO_API_URL. Default: http://localhost:8000
 
   // -- Browser Settings --
@@ -225,6 +228,101 @@ const abrasio = new Abrasio({
 | `{ width, height }` | Fixed viewport dimensions |
 
 > **Tip:** Using `null` viewport is recommended for stealth. Fixed viewports are a common bot signal.
+
+---
+
+## Client Certificates
+
+Some sites require **TLS Client Authentication** during login — the browser must present a
+client certificate during the TLS handshake (e.g. ICP-Brasil digital certificates used to log
+into gov.br services). There are two ways to do this, and which one works depends on the mode:
+
+```typescript
+import { buildClientCertificate } from 'abrasio-sdk';
+
+const cert = buildClientCertificate('https://sso.acesso.gov.br', {
+  pfxPath: 'certificado.pfx',   // or certPath= / keyPath= for a PEM pair
+  passphrase: 'minha-senha',
+});
+```
+
+### Local mode: native `clientCertificates`
+
+Playwright/Patchright support `clientCertificates` as a context option, applied when the
+browser launches. Pass it to `AbrasioOptions`:
+
+```typescript
+const abrasio = new Abrasio({
+  headless: false,
+  clientCertificates: [cert],
+});
+await abrasio.start();
+const page = await abrasio.newPage();
+await page.goto('https://sso.acesso.gov.br/login');
+```
+
+**This only works in local mode.** Under the hood, Playwright applies it via a local SOCKS proxy
+that the browser dials back into — that requires the browser and the Playwright driver to be on
+the same machine. In cloud mode the browser runs on Abrasio's infrastructure, so that proxy is
+unreachable and the certificate is silently never used.
+
+### Cloud mode (and local too): `routeWithCertificate`
+
+Intercept the specific certificate-login request and replay it outside the browser using
+Node's built-in `https` module (which supports client certificates, including PFX/PKCS12,
+natively), then feed the real response back into the browser. Since the interception always
+runs in the driver process — never inside the browser itself — this works regardless of where
+the browser runs:
+
+```typescript
+const abrasio = new Abrasio({ apiKey: 'abr_live_xxx', region: 'BR' });
+await abrasio.start();
+const page = await abrasio.newPage();
+await page.goto('https://sso.acesso.gov.br/login');
+
+const certificateButton = page.locator('#login-certificate');
+const formAction = await certificateButton.getAttribute('formaction');
+
+await abrasio.routeWithCertificate(page, formAction ?? '', cert);
+await certificateButton.click();
+```
+
+`routeWithCertificate` defaults the replay request's proxy to the session's configured
+`proxy`, so the authenticated request leaves through the same exit IP as the rest of the
+browser session — important, since an IP mismatch between normal navigation and the
+certificate-authenticated request is exactly the kind of signal sites use to flag a session.
+
+It also defaults `timeoutMs` to the session's configured `timeout` (`AbrasioConfig.timeout`,
+30000ms by default). If you see the route time out (the page ends up on
+`chrome-error://chromewebdata/`), pass a larger `timeoutMs` explicitly:
+
+```typescript
+await abrasio.routeWithCertificate(page, formAction ?? '', cert, { timeoutMs: 60000 });
+```
+
+If the replay itself throws (a flaky proxy, a connection reset), it's retried automatically —
+2 extra attempts by default (3 total), with backoff between attempts. Tune this with `retries`
+and `retryBackoffMs`:
+
+```typescript
+await abrasio.routeWithCertificate(page, formAction ?? '', cert, {
+  retries: 4,
+  retryBackoffMs: 1500,
+});
+```
+
+**PFX/PKCS12 compatibility:** Node's built-in TLS stack rejects PKCS12 bundles encrypted with
+legacy algorithms (RC2-40-CBC / 3DES — the old OpenSSL default, and still common output from
+many certificate authorities, including ICP-Brasil) with `Unsupported PKCS12 PFX data`, since
+Node 18+ ships OpenSSL 3 with the legacy provider disabled. `routeWithCertificate` and
+`buildClientCertificate` work around this transparently by parsing PFX bundles with
+[`node-forge`](https://github.com/digitalbazaar/forge) (pure JS, unaffected by the OpenSSL 3
+restriction) and converting to PEM before use — no extra setup needed. Patchright's native
+`clientCertificates` (local mode) does not get this workaround, since that conversion happens
+inside Playwright's own driver process; if a PFX fails to load there, convert it to PEM first
+(`openssl pkcs12 -in cert.pfx -out cert.pem -nodes`) or use `routeWithCertificate` instead.
+
+See `examples/certificate.ts` for a full working example.
 
 ---
 
@@ -294,6 +392,16 @@ Returns the browser context. In local mode with persistent context, returns the 
 const context = await abrasio.newContext();
 ```
 
+##### `routeWithCertificate(target, url, certificate, options?): Promise<void>`
+
+Intercepts `url` on a `Page`/`BrowserContext` and replays it outside the browser with a TLS
+client certificate attached (e.g. ICP-Brasil logins on gov.br). Works in both local and cloud
+mode. See [Client Certificates](#client-certificates) for full details.
+
+```typescript
+await abrasio.routeWithCertificate(page, formAction, cert, { timeoutMs: 60000 });
+```
+
 ---
 
 ### Options & Types
@@ -339,6 +447,7 @@ interface AbrasioConfig {
   timezone?: string;
   viewport?: { width: number; height: number } | null;
   userDataDir?: string;
+  clientCertificates?: ClientCertificate[];
   region?: string;
   profileId?: string;
   autoConfigureRegion: boolean;
@@ -354,7 +463,7 @@ interface AbrasioConfig {
 import { isCloudMode, isLocalMode, createConfig } from 'abrasio-sdk';
 
 // Check mode from config
-isCloudMode(config: AbrasioConfig): boolean   // apiKey starts with 'sk_'
+isCloudMode(config: AbrasioConfig): boolean   // apiKey starts with 'abr_'
 isLocalMode(config: AbrasioConfig): boolean   // not cloud mode
 
 // Build config from options
@@ -390,7 +499,7 @@ import {
 } from 'abrasio-sdk';
 
 try {
-  const abrasio = new Abrasio({ apiKey: 'sk_...' });
+  const abrasio = new Abrasio({ apiKey: 'abr_...' });
   await abrasio.start();
   // ...
 } catch (error) {
@@ -648,9 +757,10 @@ const regions = listSupportedRegions();
 ### Run Examples
 
 ```bash
-npm run example:basic    # Local mode stealth browsing
-npm run example:cloud    # Cloud mode with API key
-npm run example:human    # Human behavior simulation
+npm run example:basic        # Local mode stealth browsing
+npm run example:cloud        # Cloud mode with API key
+npm run example:human        # Human behavior simulation
+npm run example:certificate  # TLS client certificate login (e.g. ICP-Brasil / gov.br)
 ```
 
 ### Scraping with Data Extraction
@@ -981,9 +1091,12 @@ npm run dev       # Watch mode for development
 | Package | Purpose |
 |---------|---------|
 | `patchright` | Undetected Playwright fork (stealth browser automation) |
+| `https-proxy-agent` | HTTP CONNECT proxy tunneling for `routeWithCertificate`'s replay request |
+| `node-forge` | Pure-JS PFX/PKCS12 parsing for `routeWithCertificate` (works around Node/OpenSSL 3 rejecting legacy-encrypted PKCS12) |
 | `typescript` | TypeScript compiler (dev) |
 | `tsx` | TypeScript executor for examples (dev) |
 | `@types/node` | Node.js type definitions (dev) |
+| `@types/node-forge` | Type definitions for `node-forge` (dev) |
 
 ## Support & Community
 

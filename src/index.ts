@@ -30,6 +30,8 @@ export {
     type FingerprintConfig,
     type AbrasioConfig,
     type AbrasioOptions,
+    type ClientCertificate,
+    type ProxyConfig,
     DEFAULT_FINGERPRINT_CONFIG,
     createConfig,
     isCloudMode,
@@ -64,3 +66,10 @@ export {
     randomDelay,
     simulateReading,
 } from './utils/human.js';
+
+export {
+    buildClientCertificate,
+    routeWithClientCertificate,
+    type BuildClientCertificateOptions,
+    type RouteWithClientCertificateOptions,
+} from './utils/certificates.js';
