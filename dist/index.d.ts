@@ -28,4 +28,6 @@ export { type FingerprintConfig, type AbrasioConfig, type AbrasioOptions, type C
 export { AbrasioError, AuthenticationError, SessionError, BrowserError, TimeoutError, InsufficientFundsError, RateLimitError, BlockedError, } from './exceptions.js';
 export { type RegionConfig, REGION_CONFIG, getRegionConfig, autoConfigureRegion, listSupportedRegions, } from './region-defaults.js';
 export { humanMoveTo, humanClick, humanType, humanScroll, humanWait, randomDelay, simulateReading, } from './utils/human.js';
-export { buildClientCertificate, routeWithClientCertificate, type BuildClientCertificateOptions, type RouteWithClientCertificateOptions, } from './utils/certificates.js';
+export { buildClientCertificate, routeWithClientCertificate, pfxToPem, type BuildClientCertificateOptions, type RouteWithClientCertificateOptions, } from './utils/certificates.js';
+export { StealthClient, StealthResponse, BrowserImpersonation, stealthGet, stealthPost, type StealthClientOptions, type StealthRequestOptions, type StealthResponseInit, } from './http/index.js';
+export { TLSFingerprintError, HTTPError, } from './exceptions.js';

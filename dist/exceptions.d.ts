@@ -33,3 +33,18 @@ export declare class BlockedError extends AbrasioError {
     statusCode?: number;
     constructor(url?: string, statusCode?: number);
 }
+/**
+ * Raised when the optional TLS-fingerprinting backend (`impers`) is not
+ * installed. `StealthClient` needs it to spoof a real browser's TLS/JA3
+ * fingerprint — Node's built-in `https`/`fetch` cannot. Mirrors the Python
+ * SDK's `TLSFingerprintError` (there, curl_cffi is the missing dependency).
+ */
+export declare class TLSFingerprintError extends AbrasioError {
+    constructor(message?: string);
+}
+/** Raised by `StealthResponse.raiseForStatus()` on a non-2xx response. */
+export declare class HTTPError extends AbrasioError {
+    statusCode?: number;
+    url?: string;
+    constructor(message: string, statusCode?: number, url?: string);
+}

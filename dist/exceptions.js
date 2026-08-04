@@ -83,3 +83,28 @@ export class BlockedError extends AbrasioError {
         Object.setPrototypeOf(this, BlockedError.prototype);
     }
 }
+/**
+ * Raised when the optional TLS-fingerprinting backend (`impers`) is not
+ * installed. `StealthClient` needs it to spoof a real browser's TLS/JA3
+ * fingerprint — Node's built-in `https`/`fetch` cannot. Mirrors the Python
+ * SDK's `TLSFingerprintError` (there, curl_cffi is the missing dependency).
+ */
+export class TLSFingerprintError extends AbrasioError {
+    constructor(message = 'TLS fingerprinting backend not available. Install it with: npm install impers') {
+        super(message);
+        this.name = 'TLSFingerprintError';
+        Object.setPrototypeOf(this, TLSFingerprintError.prototype);
+    }
+}
+/** Raised by `StealthResponse.raiseForStatus()` on a non-2xx response. */
+export class HTTPError extends AbrasioError {
+    statusCode;
+    url;
+    constructor(message, statusCode, url) {
+        super(message, { statusCode, url });
+        this.name = 'HTTPError';
+        this.statusCode = statusCode;
+        this.url = url;
+        Object.setPrototypeOf(this, HTTPError.prototype);
+    }
+}

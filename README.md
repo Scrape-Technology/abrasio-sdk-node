@@ -13,6 +13,7 @@ Supports two modes:
 - [Architecture](#architecture)
 - [Configuration](#configuration)
 - [Client Certificates](#client-certificates)
+- [TLS Fingerprinting (HTTP)](#tls-fingerprinting-http)
 - [API Reference](#api-reference)
   - [Abrasio Class](#abrasio-class)
   - [Options & Types](#options--types)
@@ -42,6 +43,16 @@ npx patchright install chromium
 **Requirements:**
 - Node.js >= 18.0.0
 - Google Chrome installed (local mode uses `channel: 'chrome'`)
+
+### Optional: TLS fingerprinting (HTTP)
+
+For lightweight HTTP requests that bypass TLS/JA3 fingerprinting **without a browser**, install the optional backend:
+
+```bash
+npm install impers
+```
+
+This is optional — all browser features work without it. See [TLS Fingerprinting (HTTP)](#tls-fingerprinting-http).
 
 ## Quick Start
 
@@ -228,6 +239,92 @@ const abrasio = new Abrasio({
 | `{ width, height }` | Fixed viewport dimensions |
 
 > **Tip:** Using `null` viewport is recommended for stealth. Fixed viewports are a common bot signal.
+
+---
+
+## TLS Fingerprinting (HTTP)
+
+For HTTP requests **outside the browser**, use `StealthClient`. It reproduces a
+real browser's TLS/JA3 fingerprint so requests survive WAF/anti-bot layers that
+fingerprint the TLS ClientHello — something Node's built-in `fetch`/`https`
+cannot do (their TLS handshake matches no real browser, so many WAFs return an
+immediate `403` no matter how carefully you set headers).
+
+This is the lightweight "T0" fast path: pull data from a protected endpoint
+without launching (or paying for) a full browser.
+
+### Backend
+
+TLS-fingerprint spoofing is impossible with Node's standard library alone, so
+`StealthClient` drives [`curl-impersonate`](https://github.com/lexiforest/curl-impersonate)
+through the [`impers`](https://www.npmjs.com/package/impers) package (the Node
+analog of Python's `curl_cffi`). Install it once:
+
+```bash
+npm install impers
+```
+
+`impers` is declared as an **optional dependency**: the SDK installs fine without
+it, and `StealthClient` throws a clear `TLSFingerprintError` (with install
+instructions) only if you use it while the backend is missing. `impers` links
+`curl-impersonate` via FFI and downloads its prebuilt binary on first use — no
+compiler required. This mirrors Python's `abrasio[tls]` extra. Tradeoff to be
+aware of: it adds a native binary dependency fetched at first run.
+
+### Usage
+
+```typescript
+import { StealthClient } from 'abrasio-sdk';
+
+// Basic GET (remember to close, or use `await using`)
+const client = new StealthClient();
+try {
+  const res = await client.get('https://example.com');
+  console.log(res.statusCode, res.text);
+} finally {
+  await client.close();
+}
+
+// Region auto-sets Accept-Language (BR -> pt-BR, ...)
+await using br = new StealthClient({ region: 'BR' });
+const res = await br.get('https://example.com.br');
+
+// POST JSON
+const api = new StealthClient();
+const out = await api.post('https://api.example.com/data', { json: { key: 'value' } });
+await api.close();
+
+// Through a proxy (matches the browser session's exit IP)
+const viaProxy = new StealthClient({ proxy: 'http://user:pass@host:8080' });
+
+// Rotate the impersonated Chrome version on each request
+const rotating = new StealthClient({ rotateImpersonation: true });
+
+// Pick a specific browser fingerprint
+import { BrowserImpersonation } from 'abrasio-sdk';
+const c = new StealthClient({ impersonate: BrowserImpersonation.CHROME_131 });
+
+// One-off helpers (create + dispose a client internally)
+import { stealthGet } from 'abrasio-sdk';
+const quick = await stealthGet('https://example.com', { region: 'US' });
+```
+
+`StealthResponse` exposes `statusCode`, `headers`, `content` (Buffer), `url`,
+`text`, `ok`, `json<T>()` and `raiseForStatus()`.
+
+> **Note:** unlike a hand-rolled header spoof, `StealthClient` does **not**
+> reconstruct `Sec-CH-UA` / `Sec-Fetch-*` by hand — `curl-impersonate` already
+> emits those in the exact values and order of the impersonated browser (header
+> order is itself a fingerprint signal). Only the region-derived `Accept-Language`
+> and your own custom headers are layered on top.
+
+### Verifying the fingerprint
+
+`test/stealth-integration.test.ts` drives `StealthClient` against
+[`tls.peet.ws`](https://tls.peet.ws) and asserts the response reports HTTP/2, a
+Chrome JA4 (`t13d…h2`), and Chrome's HTTP/2 (Akamai) fingerprint — i.e. a genuine
+Chrome TLS fingerprint, not Node's. Run it with `npm test` (it self-skips if
+`impers` isn't installed).
 
 ---
 
@@ -761,6 +858,7 @@ npm run example:basic        # Local mode stealth browsing
 npm run example:cloud        # Cloud mode with API key
 npm run example:human        # Human behavior simulation
 npm run example:certificate  # TLS client certificate login (e.g. ICP-Brasil / gov.br)
+npm run example:tls          # TLS fingerprinting HTTP client (no browser; needs impers)
 ```
 
 ### Scraping with Data Extraction
@@ -1093,6 +1191,7 @@ npm run dev       # Watch mode for development
 | `patchright` | Undetected Playwright fork (stealth browser automation) |
 | `https-proxy-agent` | HTTP CONNECT proxy tunneling for `routeWithCertificate`'s replay request |
 | `node-forge` | Pure-JS PFX/PKCS12 parsing for `routeWithCertificate` (works around Node/OpenSSL 3 rejecting legacy-encrypted PKCS12) |
+| `impers` | *(optional)* curl-impersonate binding powering `StealthClient` TLS fingerprinting; downloads its binary on first use |
 | `typescript` | TypeScript compiler (dev) |
 | `tsx` | TypeScript executor for examples (dev) |
 | `@types/node` | Node.js type definitions (dev) |

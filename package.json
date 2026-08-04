@@ -13,7 +13,9 @@
     "example:cloud": "tsx examples/cloud.ts",
     "example:human": "tsx examples/human-behavior.ts",
     "example:certificate": "tsx examples/certificate.ts",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "test": "node --import tsx --test test/*.test.ts",
+    "example:tls": "tsx examples/tls-fingerprint.ts"
   },
   "keywords": [
     "scraping",
@@ -40,5 +42,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "optionalDependencies": {
+    "impers": "^0.0.9"
   }
 }

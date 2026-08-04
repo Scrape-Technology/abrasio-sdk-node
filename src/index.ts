@@ -70,6 +70,23 @@ export {
 export {
     buildClientCertificate,
     routeWithClientCertificate,
+    pfxToPem,
     type BuildClientCertificateOptions,
     type RouteWithClientCertificateOptions,
 } from './utils/certificates.js';
+
+export {
+    StealthClient,
+    StealthResponse,
+    BrowserImpersonation,
+    stealthGet,
+    stealthPost,
+    type StealthClientOptions,
+    type StealthRequestOptions,
+    type StealthResponseInit,
+} from './http/index.js';
+
+export {
+    TLSFingerprintError,
+    HTTPError,
+} from './exceptions.js';

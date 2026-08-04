@@ -77,7 +77,7 @@ export function buildClientCertificate(origin, options = {}) {
  * and isn't affected, so PFX is always converted to PEM up front rather than
  * passed to `https.Agent` as `pfx`/`passphrase` directly.
  */
-function pfxToPem(pfxBytes, passphrase) {
+export function pfxToPem(pfxBytes, passphrase) {
     const p12Asn1 = forge.asn1.fromDer(forge.util.createBuffer(pfxBytes.toString('binary')));
     const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, false, passphrase ?? '');
     const certBags = p12.getBags({ bagType: forge.pki.oids.certBag })[forge.pki.oids.certBag];
@@ -111,7 +111,7 @@ function resolveCertMaterial(certificate) {
     return { cert, key, passphrase: certificate.passphrase };
 }
 /** Normalize Abrasio's proxy config (string or object) into a single proxy URL string. */
-function normalizeProxyUrl(proxy) {
+export function normalizeProxyUrl(proxy) {
     if (!proxy)
         return undefined;
     if (typeof proxy === 'string') {
@@ -226,6 +226,14 @@ export async function routeWithClientCertificate(target, url, certificate, optio
             }
         }
         console.error(`[abrasio] Certificate route replay failed for ${request.url()} after ${retries + 1} attempt(s):`, lastErr);
-        await route.abort();
+        // Fulfill with 502 instead of aborting — route.abort() causes the browser
+        // to navigate to chrome-error://chromewebdata/, which is indistinguishable
+        // from a real navigation and breaks URL-based error detection in callers.
+        // A 502 response keeps the page on a normal HTTP error that callers can handle.
+        await route.fulfill({
+            status: 502,
+            headers: { 'content-type': 'text/plain; charset=utf-8' },
+            body: `[abrasio] Certificate route replay failed after ${retries + 1} attempt(s): ${String(lastErr)}`,
+        });
     });
 }

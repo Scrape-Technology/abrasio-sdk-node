@@ -139,13 +139,15 @@ export class Abrasio {
      * @param target Page or BrowserContext to intercept requests on.
      * @param url URL/glob pattern to intercept, as accepted by Playwright's `route()`.
      * @param certificate A `ClientCertificate` built with `buildClientCertificate(...)`.
-     * @param options.proxy Proxy to replay the request through. Defaults to the
-     *   session's configured proxy, to keep a consistent exit IP with the rest of
-     *   the browser session.
+     * @param options.proxy Proxy to replay the request through. Defaults to None
+     *   (direct connection). Do NOT pass a residential proxy here — mTLS
+     *   authentication is guaranteed by the client certificate itself (not by
+     *   exit IP), and residential proxies commonly fail to tunnel mTLS CONNECT
+     *   correctly, causing 30s timeouts and `chrome-error://chromewebdata/`.
      * @param options.timeoutMs Request timeout in milliseconds. Defaults to the
      *   session's configured `timeout`. Raise this if the replayed request times
-     *   out when going through a slow proxy — a timeout here aborts the route and
-     *   leaves the page on a failed navigation (`chrome-error://chromewebdata/`).
+     *   out — a timeout here causes the page to land on a failed navigation
+     *   (`chrome-error://chromewebdata/`).
      * @param options.retries Extra attempts after the first one if the replay
      *   throws (e.g. a flaky proxy). Default 2 (3 attempts total) before aborting
      *   the route.
@@ -166,7 +168,7 @@ export class Abrasio {
         const { routeWithClientCertificate } = await import('./utils/certificates.js');
 
         await routeWithClientCertificate(target, url, certificate, {
-            proxy: options.proxy ?? this.config.proxy,
+            proxy: options.proxy,  // never inherit session proxy — residential proxies break mTLS
             timeoutMs: options.timeoutMs ?? this.config.timeout,
             retries: options.retries,
             retryBackoffMs: options.retryBackoffMs,

@@ -28,4 +28,6 @@ export { DEFAULT_FINGERPRINT_CONFIG, createConfig, isCloudMode, isLocalMode, } f
 export { AbrasioError, AuthenticationError, SessionError, BrowserError, TimeoutError, InsufficientFundsError, RateLimitError, BlockedError, } from './exceptions.js';
 export { REGION_CONFIG, getRegionConfig, autoConfigureRegion, listSupportedRegions, } from './region-defaults.js';
 export { humanMoveTo, humanClick, humanType, humanScroll, humanWait, randomDelay, simulateReading, } from './utils/human.js';
-export { buildClientCertificate, routeWithClientCertificate, } from './utils/certificates.js';
+export { buildClientCertificate, routeWithClientCertificate, pfxToPem, } from './utils/certificates.js';
+export { StealthClient, StealthResponse, BrowserImpersonation, stealthGet, stealthPost, } from './http/index.js';
+export { TLSFingerprintError, HTTPError, } from './exceptions.js';

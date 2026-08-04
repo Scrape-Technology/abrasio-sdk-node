@@ -52,6 +52,23 @@ export interface BuildClientCertificateOptions {
  * @throws AbrasioError if origin is missing, or neither a PEM pair nor a PFX is provided.
  */
 export declare function buildClientCertificate(origin: string, options?: BuildClientCertificateOptions): ClientCertificate;
+/**
+ * Convert a PFX/PKCS12 bundle to PEM cert + key via `node-forge`.
+ *
+ * Node's built-in `tls`/`https` modules reject PKCS12 bundles encrypted with
+ * legacy algorithms (RC2-40-CBC / 3DES — OpenSSL 1.x's old default, and still
+ * common output from many CA-issued certificates, e.g. ICP-Brasil) with
+ * `Unsupported PKCS12 PFX data`, since Node 18+ ships OpenSSL 3 with the
+ * legacy provider disabled by default. `node-forge` parses PKCS12 in pure JS
+ * and isn't affected, so PFX is always converted to PEM up front rather than
+ * passed to `https.Agent` as `pfx`/`passphrase` directly.
+ */
+export declare function pfxToPem(pfxBytes: Buffer, passphrase: string | undefined): {
+    cert: Buffer;
+    key: Buffer;
+};
+/** Normalize Abrasio's proxy config (string or object) into a single proxy URL string. */
+export declare function normalizeProxyUrl(proxy?: string | ProxyConfig): string | undefined;
 export interface RouteWithClientCertificateOptions {
     /**
      * Proxy to replay the request through (string or `{server, username, password}`).
