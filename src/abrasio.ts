@@ -7,6 +7,7 @@ import type { BrowserContext, Page } from 'patchright';
 import {
     type AbrasioConfig,
     type AbrasioOptions,
+    type ArtifactInfo,
     type ClientCertificate,
     type ProxyConfig,
     createConfig,
@@ -113,6 +114,17 @@ export class Abrasio {
             throw new AbrasioError("Browser not started. Call start() first.");
         }
         return await this._browser.newContext(options);
+    }
+
+    /**
+     * List files downloaded by the browser during this session (cloud mode
+     * only), each with a presigned S3 URL valid for ~1h.
+     */
+    async getArtifacts(): Promise<ArtifactInfo[]> {
+        if (!this._browser || !('getArtifacts' in this._browser)) {
+            throw new AbrasioError('getArtifacts() is only available in cloud mode.');
+        }
+        return await (this._browser as CloudBrowser).getArtifacts();
     }
 
     private async _startLocal(): Promise<void> {
