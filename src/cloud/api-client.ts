@@ -4,7 +4,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { AbrasioConfig, ProxyConfig } from '../types.js';
+import type { AbrasioConfig, ArtifactInfo, ProxyConfig } from '../types.js';
 import {
     AbrasioError,
     AuthenticationError,
@@ -43,6 +43,8 @@ export class AbrasioAPIClient {
         /** Proxy override — string "http://host:port" or structured object.
          *  Overrides the proxy stored in the selected profile's meta.json. */
         proxy?: string | ProxyConfig;
+        /** Route to the home-server worker pool (hardest anti-bot targets only, e.g. Shopee). */
+        hard?: boolean;
     } = {}): Promise<Record<string, unknown>> {
         const payload: Record<string, unknown> = {};
         payload.url = options.url ?? 'https://example.com';
@@ -50,6 +52,7 @@ export class AbrasioAPIClient {
         if (options.profileId) payload.profile_id = options.profileId;
         if (options.device && options.device !== 'desktop') payload.device = options.device;
         if (options.mobileModel) payload.mobile_model = options.mobileModel;
+        if (options.hard) payload.hard = options.hard;
         if (options.proxy) {
             payload.proxy = typeof options.proxy === 'string'
                 ? { server: options.proxy }
@@ -97,6 +100,17 @@ export class AbrasioAPIClient {
 
     async finishSession(sessionId: string): Promise<Record<string, unknown>> {
         return this._requestWithRetry('POST', `/v1/browser/session/${sessionId}/finish`);
+    }
+
+    /**
+     * List files downloaded by the browser during this session.
+     *
+     * Each entry has a presigned S3 URL (valid ~1h) the caller can fetch
+     * directly — no further Abrasio API calls needed to get the bytes.
+     */
+    async getSessionArtifacts(sessionId: string): Promise<ArtifactInfo[]> {
+        const result = await this._requestWithRetry('GET', `/v1/browser/session/${sessionId}/artifacts`);
+        return result as unknown as ArtifactInfo[];
     }
 
     private async _requestWithRetry(

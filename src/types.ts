@@ -10,6 +10,15 @@ export interface ProxyConfig {
     password?: string;
 }
 
+/** A file downloaded by the browser during a cloud session, uploaded to S3. */
+export interface ArtifactInfo {
+    filename: string;
+    size: number;
+    /** Presigned S3 URL, valid ~1h from when this was fetched. */
+    download_url: string;
+    created_at: string;
+}
+
 /**
  * TLS Client Authentication entry — shaped to match Patchright's native
  * `clientCertificates` context option directly (see `BrowserContextOptions`).
@@ -89,6 +98,10 @@ export interface AbrasioConfig {
     device: string;
     /** Mobile device preset name (e.g. "pixel-8", "iphone-15"). Used when device="mobile". */
     mobileModel?: string;
+    /** Route to the home-server worker pool, reserved for the hardest anti-bot targets (e.g. Shopee) that the normal cloud fleet can't pass. Cloud mode only. */
+    hard: boolean;
+    /** Playwright resource types to abort on every request (e.g. ["image", "media", "font"]) — cuts bytes_consumed. Applied client-side via context.route(), before any request reaches the network, in both local and cloud mode. */
+    blockResources?: string[];
 
     /** Fingerprint protection settings (local mode only). */
     fingerprint: FingerprintConfig;
@@ -131,6 +144,10 @@ export interface AbrasioOptions {
     device?: string;
     /** Mobile device preset (e.g. "pixel-8", "iphone-15"). Used when device="mobile". */
     mobileModel?: string;
+    /** Route to the home-server worker pool, reserved for the hardest anti-bot targets (e.g. Shopee) that the normal cloud fleet can't pass. Cloud mode only. Default: false. */
+    hard?: boolean;
+    /** Playwright resource types to abort on every request (e.g. ["image", "media", "font"]) — cuts bytes_consumed. */
+    blockResources?: string[];
     /** Target URL. */
     url?: string;
     /** Abrasio API URL. */
@@ -195,6 +212,8 @@ export function createConfig(options: AbrasioOptions = {}): AbrasioConfig {
         autoConfigureRegion: true,
         device: options.device ?? 'desktop',
         mobileModel: options.mobileModel,
+        hard: options.hard ?? false,
+        blockResources: options.blockResources,
         fingerprint: { ...DEFAULT_FINGERPRINT_CONFIG, ...options.fingerprint },
         extraArgs: options.extraArgs ?? [],
         debug: options.debug ?? false,
