@@ -12,8 +12,21 @@ export class CloudBrowser {
     _sessionId = null;
     _wsEndpoint = null;
     _liveViewUrl = null;
+    // Contexts already given block_resources' route() — a cloud session's
+    // context is created lazily (see newPage/newContext), not necessarily
+    // during start(), so this must be applied wherever a context first comes
+    // into existence, exactly once per context (a WeakSet avoids leaking a
+    // reference once the context is closed).
+    _resourceBlockedContexts = new WeakSet();
     constructor(config) {
         this.config = config;
+    }
+    async _applyResourceBlockingOnce(context) {
+        if (!this.config.blockResources || this._resourceBlockedContexts.has(context))
+            return;
+        this._resourceBlockedContexts.add(context);
+        const { applyResourceBlocking } = await import('../resource-blocking.js');
+        await applyResourceBlocking(context, this.config.blockResources);
     }
     get browser() {
         if (!this._browser)
@@ -37,6 +50,7 @@ export class CloudBrowser {
                 device: this.config.device,
                 mobileModel: this.config.mobileModel,
                 proxy: this.config.proxy, // Override profile's stored proxy (if provided)
+                hard: this.config.hard,
             });
             this._sessionId = sessionData['id'];
             if (!this._sessionId) {
@@ -56,16 +70,17 @@ export class CloudBrowser {
             }
             // Connect via Patchright CDP
             this._browser = await chromium.connectOverCDP(this._wsEndpoint);
+            const contexts = this._browser.contexts();
             // Humanize all page interactions if requested
-            if (this.config.humanize) {
+            if (this.config.humanize && contexts.length > 0) {
                 const { humanizeContext } = await import('../utils/human.js');
-                const contexts = this._browser.contexts();
-                if (contexts.length > 0) {
-                    await humanizeContext(contexts[0], {
-                        headless: this.config.headless,
-                        speedFactor: this.config.humanizeSpeed,
-                    });
-                }
+                await humanizeContext(contexts[0], {
+                    headless: this.config.headless,
+                    speedFactor: this.config.humanizeSpeed,
+                });
+            }
+            if (contexts.length > 0) {
+                await this._applyResourceBlockingOnce(contexts[0]);
             }
         }
         catch (e) {
@@ -106,13 +121,23 @@ export class CloudBrowser {
         this._sessionId = null;
         this._wsEndpoint = null;
     }
+    /**
+     * List files downloaded by the browser during this session, each with
+     * a presigned S3 URL to fetch the bytes directly.
+     */
+    async getArtifacts() {
+        if (!this._apiClient || !this._sessionId) {
+            throw new Error('Browser not started or session not active');
+        }
+        return await this._apiClient.getSessionArtifacts(this._sessionId);
+    }
     async newContext(options) {
         if (!this._browser)
             throw new Error('Browser not connected');
         const contexts = this._browser.contexts();
-        if (contexts.length > 0)
-            return contexts[0];
-        return await this._browser.newContext(options);
+        const context = contexts.length > 0 ? contexts[0] : await this._browser.newContext(options);
+        await this._applyResourceBlockingOnce(context);
+        return context;
     }
     async newPage() {
         if (!this._browser)
@@ -121,6 +146,7 @@ export class CloudBrowser {
         const context = contexts.length > 0
             ? contexts[0]
             : await this._browser.newContext();
+        await this._applyResourceBlockingOnce(context);
         return await context.newPage();
     }
 }

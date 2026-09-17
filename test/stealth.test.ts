@@ -22,9 +22,23 @@ test('BrowserImpersonation.randomChrome returns a chrome target', () => {
     }
 });
 
+const KNOWN_TARGET = /^(chrome\d+|safari\d+|edge\d+|firefox\d+)$/;
+
 test('BrowserImpersonation.forRegion returns a usable target for any region', () => {
-    assert.match(BrowserImpersonation.forRegion('BR'), /^chrome\d+$/);
-    assert.match(BrowserImpersonation.forRegion(undefined), /^chrome\d+$/);
+    assert.match(BrowserImpersonation.forRegion('BR'), KNOWN_TARGET);
+    assert.match(BrowserImpersonation.forRegion(undefined), KNOWN_TARGET);
+});
+
+test('BrowserImpersonation.randomBrowser returns a known browser-family target, not just Chrome', () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+        const target = BrowserImpersonation.randomBrowser();
+        assert.match(target, KNOWN_TARGET);
+        seen.add(target.replace(/\d+$/, ''));
+    }
+    // Over 200 draws, expect to have seen more than just "chrome" — proves the
+    // pool actually mixes families instead of degenerating back to Chrome-only.
+    assert.ok(seen.size > 1, `expected multiple browser families, got: ${[...seen].join(', ')}`);
 });
 
 test('StealthResponse decodes text and reports ok for 2xx', () => {

@@ -3,7 +3,7 @@
  * Ported from Python abrasio/_api.py
  */
 import type { BrowserContext, Page } from 'patchright';
-import { type AbrasioConfig, type AbrasioOptions, type ClientCertificate, type ProxyConfig } from './types.js';
+import { type AbrasioConfig, type AbrasioOptions, type ArtifactInfo, type ClientCertificate, type ProxyConfig } from './types.js';
 export declare class Abrasio {
     readonly config: AbrasioConfig;
     private _browser;
@@ -24,6 +24,11 @@ export declare class Abrasio {
     newPage(): Promise<Page>;
     /** Create a new browser context. */
     newContext(options?: Record<string, unknown>): Promise<BrowserContext>;
+    /**
+     * List files downloaded by the browser during this session (cloud mode
+     * only), each with a presigned S3 URL valid for ~1h.
+     */
+    getArtifacts(): Promise<ArtifactInfo[]>;
     private _startLocal;
     private _startCloud;
     /**

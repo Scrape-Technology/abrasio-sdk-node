@@ -31,6 +31,8 @@ export class AbrasioAPIClient {
             payload.device = options.device;
         if (options.mobileModel)
             payload.mobile_model = options.mobileModel;
+        if (options.hard)
+            payload.hard = options.hard;
         if (options.proxy) {
             payload.proxy = typeof options.proxy === 'string'
                 ? { server: options.proxy }
@@ -62,6 +64,16 @@ export class AbrasioAPIClient {
     }
     async finishSession(sessionId) {
         return this._requestWithRetry('POST', `/v1/browser/session/${sessionId}/finish`);
+    }
+    /**
+     * List files downloaded by the browser during this session.
+     *
+     * Each entry has a presigned S3 URL (valid ~1h) the caller can fetch
+     * directly — no further Abrasio API calls needed to get the bytes.
+     */
+    async getSessionArtifacts(sessionId) {
+        const result = await this._requestWithRetry('GET', `/v1/browser/session/${sessionId}/artifacts`);
+        return result;
     }
     async _requestWithRetry(method, path, body) {
         const url = `${this.baseUrl}${path}`;

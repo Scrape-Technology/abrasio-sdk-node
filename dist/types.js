@@ -42,6 +42,8 @@ export function createConfig(options = {}) {
         autoConfigureRegion: true,
         device: options.device ?? 'desktop',
         mobileModel: options.mobileModel,
+        hard: options.hard ?? false,
+        blockResources: options.blockResources,
         fingerprint: { ...DEFAULT_FINGERPRINT_CONFIG, ...options.fingerprint },
         extraArgs: options.extraArgs ?? [],
         debug: options.debug ?? false,

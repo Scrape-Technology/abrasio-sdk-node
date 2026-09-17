@@ -186,7 +186,7 @@ export class StealthClient {
     async request(method, url, options = {}) {
         const session = await this._ensureSession();
         const impersonate = this.opts.rotateImpersonation
-            ? BrowserImpersonation.randomChrome()
+            ? BrowserImpersonation.randomBrowser()
             : undefined; // undefined => use the session's configured impersonation
         const reqOptions = {
             headers: options.headers,

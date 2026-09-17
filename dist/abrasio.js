@@ -92,6 +92,16 @@ export class Abrasio {
         }
         return await this._browser.newContext(options);
     }
+    /**
+     * List files downloaded by the browser during this session (cloud mode
+     * only), each with a presigned S3 URL valid for ~1h.
+     */
+    async getArtifacts() {
+        if (!this._browser || !('getArtifacts' in this._browser)) {
+            throw new AbrasioError('getArtifacts() is only available in cloud mode.');
+        }
+        return await this._browser.getArtifacts();
+    }
     async _startLocal() {
         const { StealthBrowser } = await import('./local/browser.js');
         this._browser = new StealthBrowser(this.config);

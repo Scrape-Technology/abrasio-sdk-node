@@ -113,6 +113,10 @@ export class StealthBrowser {
                 speedFactor: this.config.humanizeSpeed,
             });
         }
+        if (this.config.blockResources) {
+            const { applyResourceBlocking } = await import('../resource-blocking.js');
+            await applyResourceBlocking(this._context, this.config.blockResources);
+        }
     }
     async close() {
         if (this._context) {

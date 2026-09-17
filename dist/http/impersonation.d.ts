@@ -43,9 +43,24 @@ export declare const BrowserImpersonation: {
     /** Pick a random recent Chrome version (for `rotateImpersonation`). */
     readonly randomChrome: () => string;
     /**
-     * Recommended impersonation for a region. Chrome dominates worldwide, so this
-     * currently returns a random recent Chrome everywhere — kept for parity with the
-     * Python SDK and as an extension point for region-specific browser share.
+     * Pick a random target across desktop browser *families*, not just Chrome
+     * versions — real traffic to any site is a mix of Chrome/Safari/Edge/Firefox,
+     * and a pool that only ever produces Chrome is itself a (mild) fingerprint:
+     * every "different" request still looks like the same browser vendor.
+     *
+     * Weighted roughly toward real-world desktop share (Chrome most common, then
+     * Safari, Edge and Firefox trailing) via duplicate entries rather than a
+     * precise weighted-random model — good enough for diversity, not a claim of
+     * exact market-share percentages.
+     */
+    readonly randomBrowser: () => string;
+    /**
+     * Recommended impersonation for a region. No solid per-region browser-share
+     * data is wired in here (the previous version's region branches were dead —
+     * every path returned randomChrome() regardless of region), so this is
+     * honestly just randomBrowser() everywhere for now. Real per-region weighting
+     * is a legitimate future improvement, not something to fake with invented
+     * percentages.
      */
     readonly forRegion: (_region?: string) => string;
 };
