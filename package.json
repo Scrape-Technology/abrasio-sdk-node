@@ -1,9 +1,13 @@
 {
   "name": "abrasio-sdk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Node.js SDK for Abrasio - Stealth web scraping with Patchright (local + cloud)",
   "type": "module",
   "main": "dist/index.js",
+  "files": [
+    "dist/",
+    "README.md"
+  ],
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
@@ -18,15 +22,25 @@
     "example:tls": "tsx examples/tls-fingerprint.ts"
   },
   "keywords": [
-    "scraping",
+    "web-scraping",
+    "stealth-browser",
+    "scraping-browser",
+    "browser-automation",
+    "managed-browser",
+    "headless-browser",
+    "playwright",
     "patchright",
-    "stealth",
-    "chromium",
-    "automation",
-    "abrasio",
-    "anti-detection",
-    "web-scraping"
+    "cdp",
+    "abrasio"
   ],
+  "homepage": "https://scrapetechnology.com/abrasio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Scrape-Technology/abrasio-sdk-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Scrape-Technology/abrasio-sdk-node/issues"
+  },
   "author": "João Sobhie",
   "license": "MIT",
   "dependencies": {
