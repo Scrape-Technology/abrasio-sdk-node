@@ -43,7 +43,7 @@ export class AbrasioAPIClient {
         /** Proxy override — string "http://host:port" or structured object.
          *  Overrides the proxy stored in the selected profile's meta.json. */
         proxy?: string | ProxyConfig;
-        /** Route to the home-server worker pool (hardest anti-bot targets only, e.g. Shopee). */
+        /** Route to the dedicated worker pool (most demanding targets only). */
         hard?: boolean;
     } = {}): Promise<Record<string, unknown>> {
         const payload: Record<string, unknown> = {};
@@ -128,7 +128,7 @@ export class AbrasioAPIClient {
                     headers: {
                         'X-API-KEY': this.apiKey,
                         'Content-Type': 'application/json',
-                        'User-Agent': 'abrasio-sdk-node/0.2.0',
+                        'User-Agent': 'abrasio-sdk-node/0.3.1',
                         'X-Request-ID': randomUUID(),
                     },
                 };

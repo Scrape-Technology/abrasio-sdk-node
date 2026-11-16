@@ -9,7 +9,7 @@ async function main() {
     const abrasio = new Abrasio({
         apiKey: process.env['ABRASIO_API_KEY'] ?? "{your api key here}",
         region: 'BR',
-        url: 'https://shopee.com.br',
+        url: 'https://books.toscrape.com',
         headless: false,
     });
 
@@ -22,13 +22,13 @@ async function main() {
         }
 
         const page = await abrasio.newPage();
-        await page.goto('https://shopee.com.br');
+        await page.goto('https://books.toscrape.com');
 
         const title = await page.title();
         console.log(`Page title: ${title}`);
 
         const page2 = await abrasio.newPage();
-        await page2.goto('https://shopee.com.br/m/looks-verao-feminino');
+        await page2.goto('https://books.toscrape.com/catalogue/category/books/travel_2/index.html');
         const title2 = await page2.title();
         console.log(`Page title: ${title2}`);
 

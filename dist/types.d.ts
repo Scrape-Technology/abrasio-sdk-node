@@ -92,7 +92,7 @@ export interface AbrasioConfig {
     device: string;
     /** Mobile device preset name (e.g. "pixel-8", "iphone-15"). Used when device="mobile". */
     mobileModel?: string;
-    /** Route to the home-server worker pool, reserved for the hardest anti-bot targets (e.g. Shopee) that the normal cloud fleet can't pass. Cloud mode only. */
+    /** Route to the dedicated worker pool reserved for the most demanding targets. Cloud mode only. */
     hard: boolean;
     /** Playwright resource types to abort on every request (e.g. ["image", "media", "font"]) — cuts bytes_consumed. Applied client-side via context.route(), before any request reaches the network, in both local and cloud mode. */
     blockResources?: string[];
@@ -137,7 +137,7 @@ export interface AbrasioOptions {
     device?: string;
     /** Mobile device preset (e.g. "pixel-8", "iphone-15"). Used when device="mobile". */
     mobileModel?: string;
-    /** Route to the home-server worker pool, reserved for the hardest anti-bot targets (e.g. Shopee) that the normal cloud fleet can't pass. Cloud mode only. Default: false. */
+    /** Route to the dedicated worker pool reserved for the most demanding targets. Cloud mode only. Default: false. */
     hard?: boolean;
     /** Playwright resource types to abort on every request (e.g. ["image", "media", "font"]) — cuts bytes_consumed. */
     blockResources?: string[];

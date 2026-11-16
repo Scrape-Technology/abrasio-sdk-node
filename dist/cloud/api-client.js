@@ -85,7 +85,7 @@ export class AbrasioAPIClient {
                     headers: {
                         'X-API-KEY': this.apiKey,
                         'Content-Type': 'application/json',
-                        'User-Agent': 'abrasio-sdk-node/0.2.0',
+                        'User-Agent': 'abrasio-sdk-node/0.3.1',
                         'X-Request-ID': randomUUID(),
                     },
                 };

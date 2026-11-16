@@ -1,10 +1,20 @@
 # Abrasio SDK for Node.js
 
-Native TypeScript SDK for stealth web scraping with [Patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-nodejs) (undetected Playwright fork).
+[![npm version](https://img.shields.io/npm/v/abrasio-sdk.svg)](https://www.npmjs.com/package/abrasio-sdk)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
+Native TypeScript SDK for stealth web scraping with [Patchright](https://github.com/Kaliiiiiiiiii-Vinyzu/patchright-nodejs) (Playwright fork with stealth patches).
 
 Supports two modes:
-- **Local mode** (free) -- runs Chrome locally with full anti-detection
+- **Local mode** (free) -- runs Chrome locally with stealth patches
 - **Cloud mode** (paid) -- uses Abrasio API for managed browser sessions via CDP
+
+```bash
+npm install abrasio-sdk
+npx patchright install chrome
+```
+
+**Local mode is free and needs no API key.** For cloud mode (managed browsers with real fingerprints and persistent profiles), get a key (`abr_live_...`) at [scrapetechnology.com/abrasio/register](https://scrapetechnology.com/abrasio/register). Docs: [scrapetechnology.com/abrasio/docs](https://scrapetechnology.com/abrasio/docs).
 
 ## Table of Contents
 
@@ -34,10 +44,10 @@ Supports two modes:
 npm install abrasio-sdk
 ```
 
-After installing, download the Chromium binary used by Patchright:
+Local mode launches Google Chrome (`channel: 'chrome'`), not the bundled Chromium. If Chrome is not installed, install it through Patchright:
 
 ```bash
-npx patchright install chromium
+npx patchright install chrome
 ```
 
 **Requirements:**
@@ -46,7 +56,7 @@ npx patchright install chromium
 
 ### Optional: TLS fingerprinting (HTTP)
 
-For lightweight HTTP requests that bypass TLS/JA3 fingerprinting **without a browser**, install the optional backend:
+For lightweight HTTP requests with a real-browser TLS/JA3 fingerprint **without a browser**, install the optional backend:
 
 ```bash
 npm install impers
@@ -190,10 +200,10 @@ Pass these when creating an `Abrasio` instance:
 const abrasio = new Abrasio({
   // -- Mode Selection --
   apiKey: 'abr_...',           // Enables cloud mode. Env: ABRASIO_API_KEY
-  apiUrl: 'https://...',      // API URL. Env: ABRASIO_API_URL. Default: http://localhost:8000
+  apiUrl: 'https://...',      // API URL. Env: ABRASIO_API_URL. Default: https://abrasio-api.scrapetechnology.com
 
   // -- Browser Settings --
-  headless: true,             // Run headless. Default: true
+  headless: true,             // Run headless. Default: false
   proxy: 'http://user:pass@host:port',  // Proxy URL (local mode)
   timeout: 30000,             // Default timeout in ms. Default: 30000
   viewport: { width: 1920, height: 1080 },  // Viewport size. Default: null (no viewport)
@@ -201,7 +211,7 @@ const abrasio = new Abrasio({
 
   // -- Region & Locale --
   region: 'BR',               // Auto-configures locale + timezone
-  // locale and timezone are auto-set from region, but can be overridden
+  // locale and timezone are derived from region (there is no locale/timezone option)
 
   // -- Profiles --
   userDataDir: '/path/to/profile',  // Persistent profile dir (local mode)
@@ -229,7 +239,7 @@ const abrasio = new Abrasio({
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ABRASIO_API_KEY` | API key for cloud mode | -- |
-| `ABRASIO_API_URL` | Abrasio API base URL | `http://localhost:8000` |
+| `ABRASIO_API_URL` | Abrasio API base URL | `https://abrasio-api.scrapetechnology.com` |
 
 ### Viewport Behavior
 
@@ -245,7 +255,7 @@ const abrasio = new Abrasio({
 ## TLS Fingerprinting (HTTP)
 
 For HTTP requests **outside the browser**, use `StealthClient`. It reproduces a
-real browser's TLS/JA3 fingerprint so requests survive WAF/anti-bot layers that
+real browser's TLS/JA3 fingerprint, so requests look like a real browser to WAFs that
 fingerprint the TLS ClientHello — something Node's built-in `fetch`/`https`
 cannot do (their TLS handshake matches no real browser, so many WAFs return an
 immediate `403` no matter how carefully you set headers).
@@ -627,7 +637,7 @@ try {
 
 ### Human Behavior Simulation
 
-Utilities for simulating realistic human interactions. These help bypass behavior-based bot detection by mimicking real user patterns.
+Utilities for simulating realistic human interactions. They mimic real user input patterns (mouse paths, typing rhythm, scrolling).
 
 ```typescript
 import {
@@ -1188,7 +1198,7 @@ npm run dev       # Watch mode for development
 
 | Package | Purpose |
 |---------|---------|
-| `patchright` | Undetected Playwright fork (stealth browser automation) |
+| `patchright` | Playwright fork with stealth patches |
 | `https-proxy-agent` | HTTP CONNECT proxy tunneling for `routeWithCertificate`'s replay request |
 | `node-forge` | Pure-JS PFX/PKCS12 parsing for `routeWithCertificate` (works around Node/OpenSSL 3 rejecting legacy-encrypted PKCS12) |
 | `impers` | *(optional)* curl-impersonate binding powering `StealthClient` TLS fingerprinting; downloads its binary on first use |

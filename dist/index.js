@@ -16,7 +16,7 @@
  * await abrasio.close();
  *
  * // Cloud mode (paid)
- * const cloud = new Abrasio({ apiKey: 'sk_...' });
+ * const cloud = new Abrasio({ apiKey: 'abr_live_...' });
  * await cloud.start();
  * const page2 = await cloud.newPage();
  * await page2.goto('https://example.com');

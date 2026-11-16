@@ -16,7 +16,7 @@ export declare class AbrasioAPIClient {
         /** Proxy override — string "http://host:port" or structured object.
          *  Overrides the proxy stored in the selected profile's meta.json. */
         proxy?: string | ProxyConfig;
-        /** Route to the home-server worker pool (hardest anti-bot targets only, e.g. Shopee). */
+        /** Route to the dedicated worker pool (most demanding targets only). */
         hard?: boolean;
     }): Promise<Record<string, unknown>>;
     getSession(sessionId: string): Promise<Record<string, unknown>>;

@@ -10,7 +10,7 @@
  * option (local mode only) — see README.md "Client Certificates" section for why.
  *
  * Before running:
- *   export ABRASIO_API_KEY=sk_live_xxx
+ *   export ABRASIO_API_KEY=abr_live_xxx
  *   export DEMO_CERT_PFX_PATH=/path/to/certificado.pfx
  *   export DEMO_CERT_PASSPHRASE=...
  */
@@ -32,7 +32,7 @@ async function main() {
     const apiKey = process.env['ABRASIO_API_KEY'];
     if (!apiKey) {
         console.log('Set ABRASIO_API_KEY environment variable to use cloud mode');
-        console.log('Example: export ABRASIO_API_KEY=sk_live_xxx');
+        console.log('Example: export ABRASIO_API_KEY=abr_live_xxx');
         return;
     }
 
